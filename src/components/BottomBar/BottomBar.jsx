@@ -1,17 +1,6 @@
 import { useEffect, useRef, useState } from "react";
-import {
-  Play,
-  Pause,
-  SkipBack,
-  SkipForward,
-  Search,
-  X,
-} from "lucide-react";
-import {
-  FaInstagram,
-  FaLinkedinIn,
-  FaTwitter,
-} from "react-icons/fa";
+import { Play, Pause, SkipBack, SkipForward, Search, X } from "lucide-react";
+import { FaInstagram, FaLinkedinIn, FaTwitter } from "react-icons/fa";
 
 const API_URL = "https://saavnapi-nine.vercel.app";
 
@@ -40,9 +29,7 @@ function getAudioUrl(song) {
       urls.find((item) => item.quality === "96kbps") ||
       urls[urls.length - 1];
 
-    return typeof preferred === "string"
-      ? preferred
-      : preferred?.url || "";
+    return typeof preferred === "string" ? preferred : preferred?.url || "";
   }
 
   return song?.url || song?.media_url || "";
@@ -62,10 +49,7 @@ function normalizeTrack(song, index = 0) {
   return {
     id: String(song?.id || song?.songId || `${song?.name || "song"}-${index}`),
     title: song?.name || song?.title || "Unknown song",
-    artist:
-      typeof artist === "string"
-        ? artist
-        : "Unknown artist",
+    artist: typeof artist === "string" ? artist : "Unknown artist",
     streamUrl: getAudioUrl(song),
   };
 }
@@ -98,8 +82,8 @@ function BottomBar() {
         setError("");
 
         const response = await fetch(
-          `${API_URL}/result?query=${encodeURIComponent("Hindi hits")}`,
-          { signal: controller.signal }
+          `${API_URL}/result?query=${encodeURIComponent("Best Bollywood Hindi Songs")}`,
+          { signal: controller.signal },
         );
 
         if (!response.ok) {
@@ -166,8 +150,13 @@ function BottomBar() {
       setError("");
       setSearchResults([]);
 
+      //   const response = await fetch(
+      //     `${API_URL}/result?query=${encodeURIComponent(query)}`
+      //   );
       const response = await fetch(
-        `${API_URL}/result?query=${encodeURIComponent(query)}`
+        `${API_URL}?term=${encodeURIComponent(
+          query,
+        )}&entity=song&limit=20&country=US`,
       );
 
       if (!response.ok) {
@@ -179,7 +168,7 @@ function BottomBar() {
       // Ignore older search responses
       if (requestId !== requestIdRef.current) return;
 
-      const tracks = getSongList(result)
+      const tracks = (result.results || [])
         .map((song, index) => normalizeTrack(song, index))
         .filter((song) => song.streamUrl);
 
@@ -202,12 +191,10 @@ function BottomBar() {
 
   // Select a song and create a queue
   const selectTrack = (selectedTrack, tracks = queue) => {
-    const selectedQueue = tracks.length
-      ? tracks
-      : [selectedTrack];
+    const selectedQueue = tracks.length ? tracks : [selectedTrack];
 
     const index = selectedQueue.findIndex(
-      (item) => item.id === selectedTrack.id
+      (item) => item.id === selectedTrack.id,
     );
 
     const audio = audioRef.current;
@@ -296,11 +283,7 @@ function BottomBar() {
                   disabled={isLoading || !track}
                   aria-label={isPlaying ? "Pause music" : "Play music"}
                 >
-                  {isPlaying ? (
-                    <Pause size={16} />
-                  ) : (
-                    <Play size={16} />
-                  )}
+                  {isPlaying ? <Pause size={16} /> : <Play size={16} />}
 
                   <span>
                     {isLoading
@@ -330,45 +313,30 @@ function BottomBar() {
                     setIsSearchOpen((open) => !open);
                     setError("");
                   }}
-                  aria-label={
-                    isSearchOpen ? "Close search" : "Search music"
-                  }
+                  aria-label={isSearchOpen ? "Close search" : "Search music"}
                   title="Search music"
                 >
-                  {isSearchOpen ? (
-                    <X size={16} />
-                  ) : (
-                    <Search size={16} />
-                  )}
+                  {isSearchOpen ? <X size={16} /> : <Search size={16} />}
                 </button>
               </div>
 
               {/* CURRENT TRACK */}
               {track && (
                 <div className="music-track-info">
-                  <span className="music-track-title">
-                    {track.title}
-                  </span>
+                  <span className="music-track-title">{track.title}</span>
 
-                  <span className="music-track-artist">
-                    {track.artist}
-                  </span>
+                  <span className="music-track-artist">{track.artist}</span>
                 </div>
               )}
 
               {/* SEARCH PANEL */}
               {isSearchOpen && (
                 <div className="music-search-panel">
-                  <form
-                    className="music-search-form"
-                    onSubmit={searchTracks}
-                  >
+                  <form className="music-search-form" onSubmit={searchTracks}>
                     <input
                       type="search"
                       value={searchQuery}
-                      onChange={(event) =>
-                        setSearchQuery(event.target.value)
-                      }
+                      onChange={(event) => setSearchQuery(event.target.value)}
                       placeholder="Search songs or artists..."
                       aria-label="Search songs or artists"
                     />
@@ -383,9 +351,7 @@ function BottomBar() {
                   </form>
 
                   {isSearching && (
-                    <p className="music-search-message">
-                      Searching songs...
-                    </p>
+                    <p className="music-search-message">Searching songs...</p>
                   )}
 
                   {!isSearching && searchResults.length > 0 && (
@@ -440,9 +406,7 @@ function BottomBar() {
                   setIsPlaying(false);
 
                   if (track && !isLoading) {
-                    setError(
-                      "This song could not be played. Try another."
-                    );
+                    setError("This song could not be played. Try another.");
                   }
                 }}
               />

@@ -40,8 +40,7 @@ function Hero() {
               </h1>
 
               <p className="hero-description">
-                We innovate. We secure. We transform.
-                Step into the future with our cutting-edge solutions.
+                Hello, I’m Abhay Munkhiya, and you’re tuned in to NEONIX. Listen, relax, and float in the air.
               </p>
 
               <div className="hero-buttons">
