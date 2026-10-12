@@ -36,7 +36,7 @@ function Hero() {
               </p>
 
               <h1>
-                NEONIX
+                NEONIX-ABHAY
               </h1>
 
               <p className="hero-description">
