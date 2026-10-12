@@ -453,6 +453,233 @@ a {
 }
 
 /* ========================================
+   MUSIC PLAYER — DESKTOP
+======================================== */
+
+.music-player {
+  position: relative;
+  width: 100%;
+  min-width: 0;
+}
+
+.music-controls {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+}
+
+.music-control-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 38px;
+  height: 38px;
+  padding: 0;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  background: transparent;
+  color: #fff;
+  cursor: pointer;
+  transition: background 0.25s ease, border-color 0.25s ease;
+}
+.music-controls .play-button {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+}
+.music-nav-button {
+  width: 38px;
+  height: 38px;
+  flex-shrink: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 1px solid rgba(255, 255, 255, 0.18);
+  border-radius: 50%;
+  background: transparent;
+  color: #fff;
+  cursor: pointer;
+}
+.music-control-button:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.12);
+  border-color: rgba(255, 255, 255, 0.5);
+}
+
+.music-control-button:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.music-player .play-button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+  min-height: 42px;
+  padding: 0 14px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 30px;
+  background: rgba(255, 255, 255, 0.08);
+  color: #fff;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.music-player .play-button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.music-track-info {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  margin-top: 12px;
+  min-width: 0;
+}
+
+.music-track-title,
+.music-track-artist {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.music-track-title {
+  color: #fff;
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.music-track-artist {
+  color: rgba(255, 255, 255, 0.65);
+  font-size: 12px;
+}
+
+/* Search dropdown */
+
+.music-search-panel {
+  position: absolute;
+  z-index: 50;
+  top: calc(100% + 12px);
+  left: 0;
+  width: min(360px, 90vw);
+  padding: 12px;
+  border: 1px solid rgba(255, 255, 255, 0.15);
+  border-radius: 16px;
+  background: #31060d;
+  box-shadow: 0 14px 40px rgba(0, 0, 0, 0.35);
+}
+
+.music-search-form {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.music-search-form input {
+  width: 100%;
+  min-width: 0;
+  height: 42px;
+  padding: 0 12px;
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  border-radius: 9px;
+  outline: none;
+  background: rgba(255, 255, 255, 0.07);
+  color: #fff;
+}
+
+.music-search-form input::placeholder {
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.music-search-form input:focus {
+  border-color: rgba(255, 255, 255, 0.6);
+}
+
+.music-search-form button {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  width: 42px;
+  height: 42px;
+  border: 0;
+  border-radius: 9px;
+  background: #710b19;
+  color: #fff;
+  cursor: pointer;
+}
+
+.music-search-form button:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
+.music-search-results {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  max-height: 260px;
+  margin-top: 10px;
+  overflow-y: auto;
+}
+
+.music-search-result {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  width: 100%;
+  padding: 10px;
+  border: 0;
+  border-radius: 8px;
+  background: transparent;
+  color: #fff;
+  text-align: left;
+  cursor: pointer;
+}
+
+.music-search-result:hover {
+  background: rgba(255, 255, 255, 0.1);
+}
+
+.music-result-text {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  min-width: 0;
+}
+
+.music-result-title,
+.music-result-artist {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.music-result-title {
+  font-size: 13px;
+}
+
+.music-result-artist {
+  color: rgba(255, 255, 255, 0.6);
+  font-size: 11px;
+}
+
+.music-search-message,
+.music-error {
+  margin-top: 10px;
+  color: rgba(255, 255, 255, 0.75);
+  font-size: 12px;
+}
+
+/* ========================================
    DESKTOP — 1250px
 ======================================== */
 @media (max-width: 1250px) {
@@ -626,34 +853,63 @@ a {
   }
 
   .bottom-bar .row {
-    row-gap: 12px;
-    column-gap: 12px;
-    align-items: stretch;
+    row-gap: 10px;
+    column-gap: 10px;
+    align-items: center;
   }
 
-  .bottom-bar .row > .span-3 {
+  /* .bottom-bar .row > .span-3 {
     grid-column: span 12;
     min-width: 0;
     display: flex;
     align-items: stretch;
+  } */
+  .bottom-bar .row > .span-3 {
+    grid-column: span 12;
+    width: 100%;
+    min-width: 0;
+    box-sizing: border-box;
   }
-
   /* Play Intro button */
-
+   .bottom-bar .music-player {
+    width: 100%;
+  }
+  .bottom-bar .music-controls {
+    flex-wrap: wrap;
+    gap: 8px;
+  }
   .bottom-bar .play-button {
     width: 100%;
-    white-space: nowrap;
-    align-self: center;
+  }
+  .bottom-bar .music-search-panel {
+    position: relative;
+    top: auto;
+    left: auto;
+    width: 100%;
+    margin-top: 12px;
     box-sizing: border-box;
+  }
+  .bottom-bar .music-track-info {
+    width: 100%;
+  }
+ .bottom-bar .social-links {
+    display: flex;
+    justify-content: center;
+    width: 100%;
+  }
+  .bottom-bar .play-button {
+   display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 8px;
+    width: 100%;
+    margin-inline: auto;
   }
 
   /* Text cards */
 
   .bottom-bar .bottom-item {
     width: 100%;
-    min-width: 0;
-    min-height: 68px;
-    height: 100%;
     box-sizing: border-box;
   }
 
@@ -665,15 +921,22 @@ a {
   /* Social icons */
 
   .bottom-bar .social-links {
-    width: 100%;
     display: flex;
-    align-items: center;
     justify-content: center;
-    gap: 10px;
+    width: 100%;
   }
   .play-button {
     display: block;
     margin: auto;
+  }
+
+   .music-controls {
+    gap: 8px;
+  }
+
+  .music-nav-button {
+    width: 36px;
+    height: 36px;
   }
 }
 
