@@ -32,7 +32,7 @@ function Hero() {
               transition={{ duration: 1, delay: 0.3 }}
             >
               <p className="hero-label">
-                DIGITAL INNOVATION STUDIO
+                DIGITAL INNOVATION STUDIOs
               </p>
 
               <h1>
