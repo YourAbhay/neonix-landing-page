@@ -1,6 +1,18 @@
+
 import { useEffect, useRef, useState } from "react";
-import { Play, Pause, SkipBack, SkipForward, Search, X } from "lucide-react";
-import { FaInstagram, FaLinkedinIn, FaTwitter } from "react-icons/fa";
+import {
+  Play,
+  Pause,
+  SkipBack,
+  SkipForward,
+  Search,
+  X,
+} from "lucide-react";
+import {
+  FaInstagram,
+  FaLinkedinIn,
+  FaTwitter,
+} from "react-icons/fa";
 
 const API_URL = "https://discoveryprovider.audius.co/v1";
 const APP_NAME = "NEONIX";
@@ -8,6 +20,7 @@ const APP_NAME = "NEONIX";
 function BottomBar() {
   const audioRef = useRef(null);
   const shouldAutoplayRef = useRef(false);
+  const requestIdRef = useRef(0);
 
   const [isPlaying, setIsPlaying] = useState(false);
   const [track, setTrack] = useState(null);
@@ -22,7 +35,7 @@ function BottomBar() {
   const [searchResults, setSearchResults] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
 
-  // Load trending tracks when the component mounts
+  // Fetch trending tracks
   useEffect(() => {
     const controller = new AbortController();
 
@@ -33,7 +46,7 @@ function BottomBar() {
 
         const response = await fetch(
           `${API_URL}/tracks/trending?app_name=${APP_NAME}&limit=20`,
-          { signal: controller.signal },
+          { signal: controller.signal }
         );
 
         if (!response.ok) {
@@ -43,11 +56,11 @@ function BottomBar() {
         const result = await response.json();
 
         const tracks = (result.data || []).filter(
-          (item) => item.id && item.is_streamable !== false,
+          (item) => item.id && item.is_streamable !== false
         );
 
         if (!tracks.length) {
-          throw new Error("No tracks available.");
+          throw new Error("No playable tracks found.");
         }
 
         setQueue(tracks);
@@ -70,11 +83,12 @@ function BottomBar() {
     return () => controller.abort();
   }, []);
 
-  // Play a newly selected track after its audio source updates
+  // Play selected track after the audio source changes
   useEffect(() => {
-    const audio = audioRef.current;
+    if (!track || !shouldAutoplayRef.current) return;
 
-    if (!audio || !track || !shouldAutoplayRef.current) return;
+    const audio = audioRef.current;
+    if (!audio) return;
 
     shouldAutoplayRef.current = false;
     audio.load();
@@ -86,12 +100,14 @@ function BottomBar() {
     });
   }, [track]);
 
-  // Search tracks by title or artist
+  // Search songs and artists
   const searchTracks = async (event) => {
     event.preventDefault();
 
     const query = searchQuery.trim();
     if (!query) return;
+
+    const requestId = ++requestIdRef.current;
 
     try {
       setIsSearching(true);
@@ -99,7 +115,9 @@ function BottomBar() {
       setSearchResults([]);
 
       const response = await fetch(
-        `${API_URL}/tracks/search?query=${encodeURIComponent(query)}&app_name=${APP_NAME}&limit=15`,
+        `${API_URL}/tracks/search?query=${encodeURIComponent(
+          query
+        )}&app_name=${APP_NAME}&limit=15`
       );
 
       if (!response.ok) {
@@ -108,8 +126,11 @@ function BottomBar() {
 
       const result = await response.json();
 
+      // Ignore older search responses
+      if (requestId !== requestIdRef.current) return;
+
       const tracks = (result.data || []).filter(
-        (item) => item.id && item.is_streamable !== false,
+        (item) => item.id && item.is_streamable !== false
       );
 
       setSearchResults(tracks);
@@ -118,27 +139,43 @@ function BottomBar() {
         setError("No songs found. Try another search.");
       }
     } catch (err) {
-      console.error("Audius search error:", err);
-      setError("Search failed. Please try again.");
+      if (requestId === requestIdRef.current) {
+        console.error("Audius search error:", err);
+        setError("Search failed. Please try again.");
+      }
     } finally {
-      setIsSearching(false);
+      if (requestId === requestIdRef.current) {
+        setIsSearching(false);
+      }
     }
   };
 
-  // Select a song and play it
+  // Select a track and create a queue from its list
   const selectTrack = (selectedTrack, tracks = queue) => {
-    const selectedQueue = tracks.length ? tracks : [selectedTrack];
+    const selectedQueue = tracks.length
+      ? tracks
+      : [selectedTrack];
+
     const index = selectedQueue.findIndex(
-      (item) => item.id === selectedTrack.id,
+      (item) => item.id === selectedTrack.id
     );
 
+    const audio = audioRef.current;
+
+    if (audio) {
+      audio.pause();
+    }
+
+    setIsPlaying(false);
     setQueue(selectedQueue);
     setCurrentIndex(index >= 0 ? index : 0);
     setTrack(selectedTrack);
     setError("");
+
     shouldAutoplayRef.current = true;
   };
 
+  // Play and pause
   const toggleMusic = async () => {
     const audio = audioRef.current;
 
@@ -150,6 +187,7 @@ function BottomBar() {
         await audio.play();
       } catch (err) {
         console.error("Playback error:", err);
+        setIsPlaying(false);
         setError("Unable to play this track. Try another song.");
       }
     } else {
@@ -157,6 +195,7 @@ function BottomBar() {
     }
   };
 
+  // Previous and next tracks
   const playTrackAt = (index) => {
     if (!queue.length) return;
 
@@ -187,15 +226,19 @@ function BottomBar() {
     <div className="bottom-bar">
       <div className="container">
         <div className="row">
+
           {/* MUSIC PLAYER */}
-          <div className="span-3">
+          <div className="span-12">
             <div className="music-player">
+
               <div className="music-controls">
                 <button
                   type="button"
                   className="music-nav-button"
                   onClick={playPrevious}
+                  disabled={!queue.length || isLoading}
                   aria-label="Previous track"
+                  title="Previous"
                 >
                   <SkipBack size={16} />
                 </button>
@@ -204,38 +247,80 @@ function BottomBar() {
                   type="button"
                   className="play-button"
                   onClick={toggleMusic}
+                  disabled={isLoading || !track}
                   aria-label={isPlaying ? "Pause music" : "Play music"}
                 >
-                  {isPlaying ? <Pause size={16} /> : <Play size={16} />}
-                  <span>{isPlaying ? "Pause Music" : "Play Music"}</span>
+                  {isPlaying ? (
+                    <Pause size={16} />
+                  ) : (
+                    <Play size={16} />
+                  )}
+
+                  <span>
+                    {isLoading
+                      ? "Loading Music..."
+                      : isPlaying
+                        ? "Pause Music"
+                        : "Play Music"}
+                  </span>
                 </button>
 
                 <button
                   type="button"
                   className="music-nav-button"
                   onClick={playNext}
+                  disabled={!queue.length || isLoading}
                   aria-label="Next track"
+                  title="Next"
                 >
                   <SkipForward size={16} />
                 </button>
+
+                {/* SEARCH BUTTON */}
+                <button
+                  type="button"
+                  className="music-nav-button"
+                  onClick={() => {
+                    setIsSearchOpen((open) => !open);
+                    setError("");
+                  }}
+                  aria-label={isSearchOpen ? "Close search" : "Search music"}
+                  title="Search music"
+                >
+                  {isSearchOpen ? (
+                    <X size={16} />
+                  ) : (
+                    <Search size={16} />
+                  )}
+                </button>
               </div>
 
+              {/* CURRENT TRACK */}
               {track && (
                 <div className="music-track-info">
-                  <span className="music-track-title">{track.title}</span>
+                  <span className="music-track-title">
+                    {track.title}
+                  </span>
+
                   <span className="music-track-artist">
                     {track.user?.name || "Unknown artist"}
                   </span>
                 </div>
               )}
 
+              {/* SEARCH PANEL */}
               {isSearchOpen && (
                 <div className="music-search-panel">
-                  <form className="music-search-form" onSubmit={searchTracks}>
+                  <form
+                    className="music-search-form"
+                    onSubmit={searchTracks}
+                  >
                     <input
                       type="search"
                       value={searchQuery}
-                      onChange={(event) => setSearchQuery(event.target.value)}
+                      onChange={(event) =>
+                        setSearchQuery(event.target.value)
+                      }
                       placeholder="Search songs or artists..."
                       aria-label="Search songs or artists"
                     />
@@ -250,7 +335,9 @@ function BottomBar() {
                   </form>
 
                   {isSearching && (
-                    <p className="music-search-message">Searching songs...</p>
+                    <p className="music-search-message">
+                      Searching songs...
+                    </p>
                   )}
 
                   {!isSearching && searchResults.length > 0 && (
@@ -260,16 +347,21 @@ function BottomBar() {
                           type="button"
                           className="music-search-result"
                           key={item.id}
-                          onClick={() => selectTrack(item, searchResults)}
+                          onClick={() => {
+                            selectTrack(item, searchResults);
+                            setIsSearchOpen(false);
+                          }}
                         >
                           <span className="music-result-text">
                             <span className="music-result-title">
                               {item.title}
                             </span>
+
                             <span className="music-result-artist">
                               {item.user?.name || "Unknown artist"}
                             </span>
                           </span>
+
                           <Play size={15} />
                         </button>
                       ))}
@@ -278,12 +370,14 @@ function BottomBar() {
                 </div>
               )}
 
+              {/* ERROR MESSAGE */}
               {error && (
                 <p className="music-error" role="status">
                   {error}
                 </p>
               )}
 
+              {/* AUDIO */}
               <audio
                 ref={audioRef}
                 src={streamUrl}
@@ -299,8 +393,11 @@ function BottomBar() {
             </div>
           </div>
 
-          {/* ITEM 01 */}
-          <div className="span-3">
+        </div>
+{/* ------------------------------------------------------------------- */}
+<div className="row bottom-info-row">
+         {/* ITEM 01 */}
+          <div className="span-5">
             <div className="bottom-item">
               <span>01</span>
               <p>Creative digital solutions.</p>
@@ -308,7 +405,7 @@ function BottomBar() {
           </div>
 
           {/* ITEM 02 */}
-          <div className="span-3">
+          <div className="span-5">
             <div className="bottom-item">
               <span>02</span>
               <p>Technology meets design.</p>
@@ -316,7 +413,7 @@ function BottomBar() {
           </div>
 
           {/* SOCIAL LINKS */}
-          <div className="span-3">
+          <div className="span-2">
             <div className="social-links">
               <a
                 href="https://www.instagram.com/abhay.jsx/"
@@ -346,7 +443,9 @@ function BottomBar() {
               </a>
             </div>
           </div>
-        </div>
+
+</div>
+              {/* ------------------------------------------ */}
       </div>
     </div>
   );
