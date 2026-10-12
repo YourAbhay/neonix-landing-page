@@ -540,7 +540,7 @@ a {
     border-radius: 0;
     object-fit: contain;
     object-position: center;
-      animation: floatingImage 5s ease-in-out infinite;
+    animation: floatingImage 5s ease-in-out infinite;
   }
 
   .hero .span-7 {
@@ -595,8 +595,8 @@ a {
   .social-links {
     justify-content: flex-start;
   }
-  .bottom-bar { 
-   margin-top: 10px;
+  .bottom-bar {
+    margin-top: 10px;
   }
   .bottom-bar .social-links {
     display: flex;
@@ -606,16 +606,75 @@ a {
   .hero .hero-label {
     font-size: 18px;
   }
-  .hero .hero-description { 
-  font-size: 18px;
+  .hero .hero-description {
+    font-size: 18px;
   }
-   .hero  .hero-buttons button {
+  .hero .hero-buttons button {
     font-size: 14px;
-    }
-   .bottom-item  p { font-size: 16px;}
-   .play-button {font-size: 16px;}
-   .bottom-bar span { font-size: 16px;}
-   .navbar-actions a {  font-size: 18px;}
+  }
+  .bottom-item p {
+    font-size: 16px;
+  }
+  .play-button {
+    font-size: 16px;
+  }
+  .bottom-bar span {
+    font-size: 16px;
+  }
+  .navbar-actions a {
+    font-size: 18px;
+  }
+
+  .bottom-bar .row {
+    row-gap: 12px;
+    column-gap: 12px;
+    align-items: stretch;
+  }
+
+  .bottom-bar .row > .span-3 {
+    grid-column: span 12;
+    min-width: 0;
+    display: flex;
+    align-items: stretch;
+  }
+
+  /* Play Intro button */
+
+  .bottom-bar .play-button {
+    width: 100%;
+    white-space: nowrap;
+    align-self: center;
+    box-sizing: border-box;
+  }
+
+  /* Text cards */
+
+  .bottom-bar .bottom-item {
+    width: 100%;
+    min-width: 0;
+    min-height: 68px;
+    height: 100%;
+    box-sizing: border-box;
+  }
+
+  .bottom-bar .bottom-item p {
+    min-width: 0;
+    overflow-wrap: anywhere;
+  }
+
+  /* Social icons */
+
+  .bottom-bar .social-links {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 10px;
+  }
+  .play-button {
+    display: block;
+    margin: auto;
+  }
 }
 
 /* ========================================
@@ -627,14 +686,12 @@ a {
   .hero-image-wrapper {
     width: 100%;
     height: auto;
-    
   }
 
   .hero-image {
     width: 100%;
     height: auto;
     padding: 20px;
-    
   }
 
   .landing-page {
@@ -690,19 +747,27 @@ a {
   .social-links {
     justify-content: flex-start;
   }
+  .bottom-bar .row {
+    row-gap: 10px;
+    column-gap: 10px;
+  }
+
+  .bottom-bar .bottom-item {
+    min-height: 64px;
+    padding: 10px;
+  }
+
+  .bottom-bar .social-links {
+    gap: 15px;
+  }
+  .bottom-bar .play-button {
+    width: 100%;
+    box-sizing: border-box;
+    white-space: nowrap;
+    align-self: center;
+  }
+ .play-button {
+    display: block;
+    margin: auto;
+  }
 }
-
-
-
-
- 
-
-
-
-
-
-
-
-
-
-

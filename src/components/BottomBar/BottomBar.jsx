@@ -6,7 +6,9 @@ function BottomBar() {
       <div className="container">
         <div className="row">
           <div className="span-3">
-            <button className="play-button">▶ Play Intro</button>
+            <button className="play-button">
+              <p>▶ Play Intro</p>
+            </button>
           </div>
 
           <div className="span-3">
