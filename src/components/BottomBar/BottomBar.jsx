@@ -1,4 +1,3 @@
-
 import { useEffect, useRef, useState } from "react";
 import {
   Play,
@@ -14,8 +13,62 @@ import {
   FaTwitter,
 } from "react-icons/fa";
 
-const API_URL = "https://discoveryprovider.audius.co/v1";
-const APP_NAME = "NEONIX";
+const API_URL = "https://saavnapi-nine.vercel.app";
+
+function getSongList(result) {
+  if (Array.isArray(result)) return result;
+  if (Array.isArray(result?.data?.results)) return result.data.results;
+  if (Array.isArray(result?.data)) return result.data;
+  if (Array.isArray(result?.results)) return result.results;
+  if (Array.isArray(result?.songs)) return result.songs;
+
+  return [];
+}
+
+function getAudioUrl(song) {
+  if (song?.streamUrl) return song.streamUrl;
+  if (song?.downloadUrl && typeof song.downloadUrl === "string") {
+    return song.downloadUrl;
+  }
+
+  const urls = song?.downloadUrl;
+
+  if (Array.isArray(urls)) {
+    const preferred =
+      urls.find((item) => item.quality === "320kbps") ||
+      urls.find((item) => item.quality === "160kbps") ||
+      urls.find((item) => item.quality === "96kbps") ||
+      urls[urls.length - 1];
+
+    return typeof preferred === "string"
+      ? preferred
+      : preferred?.url || "";
+  }
+
+  return song?.url || song?.media_url || "";
+}
+
+function normalizeTrack(song, index = 0) {
+  const artist =
+    song?.artists?.primary
+      ?.map((item) => item.name)
+      .filter(Boolean)
+      .join(", ") ||
+    song?.primaryArtists ||
+    song?.artist ||
+    song?.artists ||
+    "Unknown artist";
+
+  return {
+    id: String(song?.id || song?.songId || `${song?.name || "song"}-${index}`),
+    title: song?.name || song?.title || "Unknown song",
+    artist:
+      typeof artist === "string"
+        ? artist
+        : "Unknown artist",
+    streamUrl: getAudioUrl(song),
+  };
+}
 
 function BottomBar() {
   const audioRef = useRef(null);
@@ -35,7 +88,7 @@ function BottomBar() {
   const [searchResults, setSearchResults] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
 
-  // Fetch trending tracks
+  // Load Hindi songs when the component mounts
   useEffect(() => {
     const controller = new AbortController();
 
@@ -45,22 +98,22 @@ function BottomBar() {
         setError("");
 
         const response = await fetch(
-          `${API_URL}/tracks/trending?app_name=${APP_NAME}&limit=20`,
+          `${API_URL}/result?query=${encodeURIComponent("Hindi hits")}`,
           { signal: controller.signal }
         );
 
         if (!response.ok) {
-          throw new Error("Unable to load trending tracks.");
+          throw new Error("Unable to load songs.");
         }
 
         const result = await response.json();
 
-        const tracks = (result.data || []).filter(
-          (item) => item.id && item.is_streamable !== false
-        );
+        const tracks = getSongList(result)
+          .map((song, index) => normalizeTrack(song, index))
+          .filter((song) => song.streamUrl);
 
         if (!tracks.length) {
-          throw new Error("No playable tracks found.");
+          throw new Error("No playable songs found.");
         }
 
         setQueue(tracks);
@@ -68,7 +121,7 @@ function BottomBar() {
         setCurrentIndex(0);
       } catch (err) {
         if (err.name !== "AbortError") {
-          console.error("Audius error:", err);
+          console.error("JioSaavn error:", err);
           setError("Music is currently unavailable.");
         }
       } finally {
@@ -83,12 +136,11 @@ function BottomBar() {
     return () => controller.abort();
   }, []);
 
-  // Play selected track after the audio source changes
+  // Play a selected song after its audio source updates
   useEffect(() => {
-    if (!track || !shouldAutoplayRef.current) return;
-
     const audio = audioRef.current;
-    if (!audio) return;
+
+    if (!audio || !track || !shouldAutoplayRef.current) return;
 
     shouldAutoplayRef.current = false;
     audio.load();
@@ -96,7 +148,7 @@ function BottomBar() {
     audio.play().catch((err) => {
       console.error("Playback error:", err);
       setIsPlaying(false);
-      setError("Unable to play this track. Try another song.");
+      setError("Unable to play this song. Try another song.");
     });
   }, [track]);
 
@@ -115,9 +167,7 @@ function BottomBar() {
       setSearchResults([]);
 
       const response = await fetch(
-        `${API_URL}/tracks/search?query=${encodeURIComponent(
-          query
-        )}&app_name=${APP_NAME}&limit=15`
+        `${API_URL}/result?query=${encodeURIComponent(query)}`
       );
 
       if (!response.ok) {
@@ -129,18 +179,18 @@ function BottomBar() {
       // Ignore older search responses
       if (requestId !== requestIdRef.current) return;
 
-      const tracks = (result.data || []).filter(
-        (item) => item.id && item.is_streamable !== false
-      );
+      const tracks = getSongList(result)
+        .map((song, index) => normalizeTrack(song, index))
+        .filter((song) => song.streamUrl);
 
       setSearchResults(tracks);
 
       if (!tracks.length) {
-        setError("No songs found. Try another search.");
+        setError("No playable songs found. Try another search.");
       }
     } catch (err) {
       if (requestId === requestIdRef.current) {
-        console.error("Audius search error:", err);
+        console.error("JioSaavn search error:", err);
         setError("Search failed. Please try again.");
       }
     } finally {
@@ -150,7 +200,7 @@ function BottomBar() {
     }
   };
 
-  // Select a track and create a queue from its list
+  // Select a song and create a queue
   const selectTrack = (selectedTrack, tracks = queue) => {
     const selectedQueue = tracks.length
       ? tracks
@@ -188,14 +238,14 @@ function BottomBar() {
       } catch (err) {
         console.error("Playback error:", err);
         setIsPlaying(false);
-        setError("Unable to play this track. Try another song.");
+        setError("Unable to play this song. Try another song.");
       }
     } else {
       audio.pause();
     }
   };
 
-  // Previous and next tracks
+  // Previous and next songs
   const playTrackAt = (index) => {
     if (!queue.length) return;
 
@@ -218,19 +268,15 @@ function BottomBar() {
     playTrackAt(currentIndex + 1);
   };
 
-  const streamUrl = track
-    ? `${API_URL}/tracks/${track.id}/stream?app_name=${APP_NAME}`
-    : undefined;
+  const streamUrl = track?.streamUrl || undefined;
 
   return (
     <div className="bottom-bar">
       <div className="container">
         <div className="row">
-
           {/* MUSIC PLAYER */}
           <div className="span-12">
             <div className="music-player">
-
               <div className="music-controls">
                 <button
                   type="button"
@@ -284,7 +330,9 @@ function BottomBar() {
                     setIsSearchOpen((open) => !open);
                     setError("");
                   }}
-                  aria-label={isSearchOpen ? "Close search" : "Search music"}
+                  aria-label={
+                    isSearchOpen ? "Close search" : "Search music"
+                  }
                   title="Search music"
                 >
                   {isSearchOpen ? (
@@ -303,7 +351,7 @@ function BottomBar() {
                   </span>
 
                   <span className="music-track-artist">
-                    {track.user?.name || "Unknown artist"}
+                    {track.artist}
                   </span>
                 </div>
               )}
@@ -358,7 +406,7 @@ function BottomBar() {
                             </span>
 
                             <span className="music-result-artist">
-                              {item.user?.name || "Unknown artist"}
+                              {item.artist}
                             </span>
                           </span>
 
@@ -382,21 +430,29 @@ function BottomBar() {
                 ref={audioRef}
                 src={streamUrl}
                 preload="none"
-                onPlay={() => setIsPlaying(true)}
+                onPlay={() => {
+                  setIsPlaying(true);
+                  setError("");
+                }}
                 onPause={() => setIsPlaying(false)}
                 onEnded={playNext}
                 onError={() => {
                   setIsPlaying(false);
-                  setError("This track could not be played. Try another.");
+
+                  if (track && !isLoading) {
+                    setError(
+                      "This song could not be played. Try another."
+                    );
+                  }
                 }}
               />
             </div>
           </div>
-
         </div>
-{/* ------------------------------------------------------------------- */}
-<div className="row bottom-info-row">
-         {/* ITEM 01 */}
+
+        {/* BOTTOM INFO */}
+        <div className="row bottom-info-row">
+          {/* ITEM 01 */}
           <div className="span-5">
             <div className="bottom-item">
               <span>01</span>
@@ -443,9 +499,7 @@ function BottomBar() {
               </a>
             </div>
           </div>
-
-</div>
-              {/* ------------------------------------------ */}
+        </div>
       </div>
     </div>
   );
