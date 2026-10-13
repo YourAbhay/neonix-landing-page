@@ -1,6 +1,6 @@
 import Navbar from "./components/Navbar/Navbar";
 import Hero from "./components/Hero/Hero";
-import BottomBar from "./components/BottomBar/BottomBar2";
+import BottomBar from "./components/BottomBar/BottomBar";
 
 function App() {
   return (

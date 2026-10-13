@@ -157,6 +157,7 @@ function BottomBar() {
 
   // Search both manually added songs and songs from the API.
   const searchTracks = async (event) => {
+     console.log("SEARCH FUNCTION CALLED");
     event.preventDefault();
 
     const query = searchQuery.trim();
@@ -206,6 +207,7 @@ function BottomBar() {
       console.log("Manual results:", manualResults);
       console.log("All results:", allResults);
       setSearchResults(allResults);
+      console.log("Final search results:", allResults);
 
       if (!allResults.length) {
         setError("No playable songs found. Try another search.");
