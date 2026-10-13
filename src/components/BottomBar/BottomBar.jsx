@@ -10,12 +10,12 @@ function getSongList(result) {
   if (Array.isArray(result?.data)) return result.data;
   if (Array.isArray(result?.results)) return result.results;
   if (Array.isArray(result?.songs)) return result.songs;
-
   return [];
 }
 
 function getAudioUrl(song) {
   if (song?.streamUrl) return song.streamUrl;
+
   if (song?.downloadUrl && typeof song.downloadUrl === "string") {
     return song.downloadUrl;
   }
@@ -34,6 +34,17 @@ function getAudioUrl(song) {
 
   return song?.url || song?.media_url || "";
 }
+
+// Add more locally stored songs to this array.
+// Put the audio files inside public/music/ and use URLs like /music/song-name.mp3.
+const MANUAL_SONGS = [
+  {
+    id: "manual-1",
+    title: "Mera Mann",
+    artist: "Artist",
+    streamUrl: "/music/Mera-Mann.mp3",
+  },
+];
 
 function normalizeTrack(song, index = 0) {
   const artist =
@@ -72,7 +83,7 @@ function BottomBar() {
   const [searchResults, setSearchResults] = useState([]);
   const [isSearching, setIsSearching] = useState(false);
 
-  // Load Hindi songs when the component mounts
+  // Load Hindi songs when the component mounts.
   useEffect(() => {
     const controller = new AbortController();
 
@@ -91,22 +102,31 @@ function BottomBar() {
         }
 
         const result = await response.json();
-
-        const tracks = getSongList(result)
+        const apiTracks = getSongList(result)
           .map((song, index) => normalizeTrack(song, index))
           .filter((song) => song.streamUrl);
 
-        if (!tracks.length) {
+        const allTracks = [...MANUAL_SONGS, ...apiTracks];
+
+        if (!allTracks.length) {
           throw new Error("No playable songs found.");
         }
 
-        setQueue(tracks);
-        setTrack(tracks[0]);
+        setQueue(allTracks);
+        setTrack(allTracks[0]);
         setCurrentIndex(0);
       } catch (err) {
         if (err.name !== "AbortError") {
           console.error("JioSaavn error:", err);
-          setError("Music is currently unavailable.");
+
+          // Keep manually added songs available even if the API fails.
+          if (MANUAL_SONGS.length) {
+            setQueue(MANUAL_SONGS);
+            setTrack(MANUAL_SONGS[0]);
+            setCurrentIndex(0);
+          } else {
+            setError("Music is currently unavailable.");
+          }
         }
       } finally {
         if (!controller.signal.aborted) {
@@ -116,11 +136,10 @@ function BottomBar() {
     }
 
     fetchTrendingTracks();
-
     return () => controller.abort();
   }, []);
 
-  // Play a selected song after its audio source updates
+  // Play a selected song after its audio source updates.
   useEffect(() => {
     const audio = audioRef.current;
 
@@ -136,7 +155,7 @@ function BottomBar() {
     });
   }, [track]);
 
-  // Search songs and artists
+  // Search both manually added songs and songs from the API.
   const searchTracks = async (event) => {
     event.preventDefault();
 
@@ -150,36 +169,50 @@ function BottomBar() {
       setError("");
       setSearchResults([]);
 
-      //   const response = await fetch(
-      //     `${API_URL}/result?query=${encodeURIComponent(query)}`
+      //   const manualResults = MANUAL_SONGS.filter((song) =>
+      //     `${song.title} ${song.artist}`.toLowerCase().includes(query.toLowerCase()),
       //   );
-      const response = await fetch(
-        `${API_URL}?term=${encodeURIComponent(
-          query,
-        )}&entity=song&limit=20&country=US`,
+      const normalizedQuery = query.toLowerCase().trim();
+
+      const manualResults = MANUAL_SONGS.filter(
+        (song) =>
+          song.title.toLowerCase().includes(normalizedQuery) ||
+          song.artist.toLowerCase().includes(normalizedQuery),
       );
 
-      if (!response.ok) {
-        throw new Error("Search request failed.");
+      let apiTracks = [];
+
+      try {
+        const response = await fetch(
+          `${API_URL}/result?query=${encodeURIComponent(query)}`,
+        );
+
+        if (response.ok) {
+          const result = await response.json();
+          apiTracks = getSongList(result)
+            .map((song, index) => normalizeTrack(song, index))
+            .filter((song) => song.streamUrl);
+        }
+      } catch (apiError) {
+        // Manual song matches can still be shown if the API is unavailable.
+        console.error("JioSaavn search error:", apiError);
       }
 
-      const result = await response.json();
-
-      // Ignore older search responses
+      // Ignore older search responses.
       if (requestId !== requestIdRef.current) return;
 
-      const tracks = (result.results || [])
-        .map((song, index) => normalizeTrack(song, index))
-        .filter((song) => song.streamUrl);
+      const allResults = [...manualResults, ...apiTracks];
+      console.log("Search query:", query);
+      console.log("Manual results:", manualResults);
+      console.log("All results:", allResults);
+      setSearchResults(allResults);
 
-      setSearchResults(tracks);
-
-      if (!tracks.length) {
+      if (!allResults.length) {
         setError("No playable songs found. Try another search.");
       }
     } catch (err) {
       if (requestId === requestIdRef.current) {
-        console.error("JioSaavn search error:", err);
+        console.error("Music search error:", err);
         setError("Search failed. Please try again.");
       }
     } finally {
@@ -189,33 +222,27 @@ function BottomBar() {
     }
   };
 
-  // Select a song and create a queue
+  // Select a song and create a queue.
   const selectTrack = (selectedTrack, tracks = queue) => {
     const selectedQueue = tracks.length ? tracks : [selectedTrack];
-
     const index = selectedQueue.findIndex(
       (item) => item.id === selectedTrack.id,
     );
-
     const audio = audioRef.current;
 
-    if (audio) {
-      audio.pause();
-    }
+    if (audio) audio.pause();
 
     setIsPlaying(false);
     setQueue(selectedQueue);
     setCurrentIndex(index >= 0 ? index : 0);
     setTrack(selectedTrack);
     setError("");
-
     shouldAutoplayRef.current = true;
   };
 
-  // Play and pause
+  // Play and pause.
   const toggleMusic = async () => {
     const audio = audioRef.current;
-
     if (!audio || !track || isLoading) return;
 
     if (audio.paused) {
@@ -232,7 +259,7 @@ function BottomBar() {
     }
   };
 
-  // Previous and next songs
+  // Previous and next songs.
   const playTrackAt = (index) => {
     if (!queue.length) return;
 
@@ -284,7 +311,6 @@ function BottomBar() {
                   aria-label={isPlaying ? "Pause music" : "Play music"}
                 >
                   {isPlaying ? <Pause size={16} /> : <Play size={16} />}
-
                   <span>
                     {isLoading
                       ? "Loading Music..."
@@ -324,7 +350,6 @@ function BottomBar() {
               {track && (
                 <div className="music-track-info">
                   <span className="music-track-title">{track.title}</span>
-
                   <span className="music-track-artist">{track.artist}</span>
                 </div>
               )}
@@ -370,12 +395,10 @@ function BottomBar() {
                             <span className="music-result-title">
                               {item.title}
                             </span>
-
                             <span className="music-result-artist">
                               {item.artist}
                             </span>
                           </span>
-
                           <Play size={15} />
                         </button>
                       ))}
@@ -404,7 +427,6 @@ function BottomBar() {
                 onEnded={playNext}
                 onError={() => {
                   setIsPlaying(false);
-
                   if (track && !isLoading) {
                     setError("This song could not be played. Try another.");
                   }

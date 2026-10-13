@@ -32,15 +32,15 @@ function Hero() {
               transition={{ duration: 1, delay: 0.3 }}
             >
               <p className="hero-label">
-                DIGITAL INNOVATION STUDIOs
+                DIGITAL INNOVATION STUDIOS
               </p>
 
               <h1>
-                NEONIX-ABHAY
+                NEONIX
               </h1>
 
               <p className="hero-description">
-                Hello, I’m Abhay Munkhiya, and you’re tuned in to NEONIX. Listen, relax, and float in the air.
+                Hello, I’m Abhay Munakhiya, and you’re tuned in to NEONIX. Listen, relax, and float in the air.
               </p>
 
               <div className="hero-buttons">
