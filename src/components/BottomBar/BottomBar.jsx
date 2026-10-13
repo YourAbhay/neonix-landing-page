@@ -157,7 +157,7 @@ function BottomBar() {
 
   // Search both manually added songs and songs from the API.
   const searchTracks = async (event) => {
-     console.log("SEARCH FUNCTION CALLED");
+    console.log("SEARCH FUNCTION CALLED");
     event.preventDefault();
 
     const query = searchQuery.trim();
@@ -250,9 +250,12 @@ function BottomBar() {
     if (audio.paused) {
       try {
         setError("");
+        audio.load();
         await audio.play();
       } catch (err) {
         console.error("Playback error:", err);
+        console.error("Audio error code:", audio.error?.code);
+
         setIsPlaying(false);
         setError("Unable to play this song. Try another song.");
       }
